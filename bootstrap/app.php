@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Middleware\AddRequestId;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RequireTenant;
+use App\Http\Middleware\ResolveTenantForDashboard;
+use App\Http\Middleware\ResolveTenantFromHostname;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,9 +27,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [
+            // Runs on every web request: resolves the Host header to a
+            // tenant when it matches one, and simply falls through
+            // otherwise (see the class docblock for why this one is soft).
+            ResolveTenantFromHostname::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+        ]);
+
+        $middleware->alias([
+            'tenant.required' => RequireTenant::class,
+            'tenant.dashboard' => ResolveTenantForDashboard::class,
+            'platform.admin' => EnsurePlatformAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

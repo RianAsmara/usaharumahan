@@ -32,7 +32,11 @@ services:
     depends_on:
       - app
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/up"]
+      # "localhost" resolves to ::1 first (see /etc/hosts), but nginx only
+      # listens on IPv4 here — the image's IPv6-listen auto-patch can't run
+      # because default.conf is bind-mounted read-only. Use 127.0.0.1
+      # explicitly so the healthcheck doesn't race that IPv6 dead end.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/up"]
       interval: 10s
       timeout: 5s
       retries: 5

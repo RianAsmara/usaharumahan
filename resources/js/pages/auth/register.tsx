@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
+import { redirect as googleRedirect } from '@/routes/auth/google';
 import { store } from '@/routes/register';
 
 type Props = {
@@ -100,6 +101,22 @@ export default function Register({ passwordRules }: Props) {
                                 Create account
                             </Button>
                         </div>
+
+                        <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
+                            <span className="relative z-10 bg-background px-2 text-muted-foreground">
+                                Atau
+                            </span>
+                        </div>
+
+                        <a href={googleRedirect().url}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full"
+                            >
+                                Daftar dengan Google
+                            </Button>
+                        </a>
 
                         <div className="text-center text-sm text-muted-foreground">
                             Already have an account?{' '}

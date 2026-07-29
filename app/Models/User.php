@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -20,6 +21,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string $password
+ * @property bool $is_platform_admin
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -44,7 +46,24 @@ class User extends Authenticatable implements PasskeyUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_platform_admin' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return HasMany<TenantMembership, $this>
+     */
+    public function tenantMemberships(): HasMany
+    {
+        return $this->hasMany(TenantMembership::class);
+    }
+
+    /**
+     * @return HasMany<SocialAccount, $this>
+     */
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
     }
 }

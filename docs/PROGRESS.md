@@ -156,3 +156,98 @@ models and migrations, `TenantContext`, hostname resolution middleware,
 dashboard tenant resolution, Policies, `platform_admin` role, Google OAuth
 wiring (Socialite is installed but not yet wired to a controller/flow),
 owner onboarding flow, and the first cross-tenant isolation tests.
+
+## Phase 1 — Authentication and Tenancy
+
+**Status**: Complete
+
+### Implemented
+
+- `Tenant`, `TenantMembership`, `Store`, `StoreDomain`, `SocialAccount`
+  models and migrations — ULID primary keys, `tenant_id` on every
+  tenant-owned table, per `docs/DATABASE.md` §1.
+- `App\Support\Tenancy\TenantContext`: the single source of truth for "which
+  tenant is this request for," populated once per request by
+  tenant-resolution middleware and never decided anywhere else.
+- `App\Http\Middleware\ResolveTenantFromHostname` (soft — falls through for
+  the root domain, storefront-facing) and
+  `App\Http\Middleware\ResolveTenantForDashboard` (hard — resolves from the
+  authenticated user's membership, not the hostname) and
+  `App\Http\Middleware\RequireTenant` (guards routes that only make sense on
+  a resolved tenant). See `docs/TENANCY.md`.
+- `App\Http\Middleware\EnsurePlatformAdmin` and a `platform_admin` boolean
+  on `users`, gating `App\Http\Controllers\PlatformAdmin\TenantController`
+  (list/show tenants).
+- `App\Policies\StorePolicy` — owner-only writes, any-member reads,
+  independently re-deriving tenant membership from the model rather than
+  trusting how it was fetched (`docs/TENANCY.md` §5) — the pattern every
+  later phase's policies (Phase 2's `CategoryPolicy`/`ProductPolicy`/
+  `InventoryPolicy`) follows.
+- Owner onboarding (`App\Actions\Tenancy\CreateTenantWithStore`): tenant +
+  owner membership + store + verified subdomain created together in one
+  transaction, so a failure partway through never leaves a tenant without a
+  store or an owner without a membership.
+- Google OAuth (`App\Http\Controllers\Auth\GoogleAuthController`,
+  `App\Actions\Auth\LoginOrRegisterWithGoogle`): verified-email-only,
+  reuses an existing `SocialAccount` on repeat login, links to an existing
+  `User` by verified email instead of duplicating.
+- Dashboard `Store` profile CRUD (`StoreController`), staff read-only /
+  owner read-write.
+- `nginx` FastCGI buffer sizes increased (`fastcgi_buffers`/
+  `fastcgi_buffer_size`) — Laravel's preload `Link` headers plus
+  session/XSRF cookies were exceeding nginx's default header buffer,
+  causing an intermittent 502 on otherwise-working pages.
+- `docker/nginx` healthcheck fixed to target `127.0.0.1` instead of
+  `localhost` — `localhost` resolves to `::1` first inside the container,
+  but nginx only listens on IPv4 (the image's IPv6-listen auto-patch can't
+  run because `default.conf` is bind-mounted read-only), so the healthcheck
+  was racing a dead end while real traffic through the published port
+  worked the whole time.
+- `.remember/` (the Remember plugin's tool-generated state, already fully
+  gitignored) added to `eslint.config.js`'s ignore list — a stray `.ts` file
+  in there was failing `lint:check` for a reason unrelated to any app code.
+
+### Tests added
+
+- `tests/Feature/Auth/GoogleAuthenticationTest.php` — 5 tests.
+- `tests/Feature/Tenancy/{OnboardingTest,HostnameResolutionTest,CrossTenantIsolationTest}.php` — 15 tests.
+- `tests/Feature/PlatformAdmin/PlatformAdminAuthorizationTest.php` — 4 tests.
+- `tests/Feature/Store/StoreSettingsTest.php` — 3 tests.
+- `tests/Feature/DashboardTest.php` updated for tenant-aware redirects.
+- `tests/Concerns/CreatesTenants.php` — shared `createTenantWithOwner()` /
+  `addStaffToTenant()` helpers used by every tenancy-aware test from this
+  phase onward.
+
+**Total: 71 backend tests / 284 assertions passing on Postgres.**
+
+### Quality results
+
+| Gate | Result |
+|---|---|
+| Pint | ✅ Pass |
+| Larastan (level 7) | ✅ No errors (87 files analyzed) |
+| Pest | ✅ 71 passed, 284 assertions (real Postgres) |
+| ESLint | ✅ Pass |
+| Prettier | ✅ Pass |
+| TypeScript (`tsc --noEmit`) | ✅ Pass |
+| Vitest | ✅ 3 passed |
+| Production build (`vite build`) | ✅ Succeeds |
+| SSR build (`vite build --ssr`) | ✅ Succeeds |
+
+### Known limitations
+
+- No dedicated Policy unit tests — policies are exercised through their
+  controllers' HTTP feature tests, matching this project's established
+  testing style (no bare `*PolicyTest.php` files anywhere in the suite).
+- Custom domain verification (Phase 6) is out of scope here; `StoreDomain`
+  already models `type`/`verification_status` so Phase 6 extends rather
+  than reshapes it.
+
+### Next phase
+
+Phase 2 (dashboard slice) — Catalog and inventory: categories, products,
+images, options/variants, the inventory ledger, and owner/staff dashboard
+CRUD pages, per
+`docs/superpowers/specs/2026-07-29-phase2-catalog-inventory-design.md` and
+`docs/superpowers/plans/2026-07-29-phase2-catalog-inventory.md`. The public
+storefront listing/detail pages are deferred to a follow-up spec.

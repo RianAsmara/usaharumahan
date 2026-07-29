@@ -7,9 +7,9 @@ the ledger.
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | Foundation: Laravel 13 + React starter kit, Postgres, Redis, Docker Compose, Boost, Horizon, Pint, Larastan, Pest, frontend tooling, CI, docs skeleton, health checks, request ID middleware | In progress |
-| 1 | Authentication and tenancy: registration/login/verification, Google OAuth, Tenant/Membership/Store, `TenantContext`, hostname resolution, policies, platform-admin role, onboarding, cross-tenant tests | Not started |
-| 2 | Catalog and inventory: categories, products, images, options, variants, inventory + movements, dashboard pages, public listing/detail | Not started |
+| 0 | Foundation: Laravel 13 + React starter kit, Postgres, Redis, Docker Compose, Boost, Horizon, Pint, Larastan, Pest, frontend tooling, CI, docs skeleton, health checks, request ID middleware | Complete |
+| 1 | Authentication and tenancy: registration/login/verification, Google OAuth, Tenant/Membership/Store, `TenantContext`, hostname resolution, policies, platform-admin role, onboarding, cross-tenant tests | Complete |
+| 2 | Catalog and inventory: categories, products, images, options, variants, inventory + movements, dashboard pages, public listing/detail | In progress (dashboard slice) |
 | 3 | Cart and storefront: storefront layout, category pages, search, guest cart, mobile UI, SEO metadata, SSR storefront | Not started |
 | 4 | Checkout and orders: customers/addresses, idempotent checkout, inventory reservation, order snapshots/history, reservation expiry, WhatsApp checkout, concurrency tests | Not started |
 | 5 | Payments and shipping: payment contracts + manual/COD/fake adapters, idempotent webhooks, shipping contracts + pickup/flat/zone, shipment tracking, queued notifications | Not started |
