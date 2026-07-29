@@ -1,0 +1,125 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  APP_ENV: testing
+  APP_DEBUG: true
+  DB_CONNECTION: pgsql
+  DB_HOST: 127.0.0.1
+  DB_PORT: 5432
+  DB_DATABASE: usaharumahan_testing
+  DB_USERNAME: usaharumahan
+  DB_PASSWORD: secret
+  REDIS_HOST: 127.0.0.1
+  REDIS_PORT: 6379
+  CACHE_STORE: array
+  SESSION_DRIVER: array
+  QUEUE_CONNECTION: sync
+  MAIL_MAILER: array
+  BROADCAST_CONNECTION: log
+  FILESYSTEM_DISK: local
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: usaharumahan_testing
+          POSTGRES_USER: usaharumahan
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U usaharumahan -d usaharumahan_testing"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_pgsql, pgsql, redis, bcmath, zip, intl, gd, pcntl, opcache
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Cache Composer packages
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      - name: Run migrations
+        run: php artisan migrate --force --ansi
+
+      - name: Pint (code style)
+        run: ./vendor/bin/pint --test
+
+      - name: Larastan (static analysis)
+        run: ./vendor/bin/phpstan analyse --memory-limit=512M
+
+      - name: Pest (backend tests)
+        run: php artisan test
+
+      - name: ESLint
+        run: npm run lint:check
+
+      - name: Prettier
+        run: npm run format:check
+
+      - name: TypeScript
+        run: npm run types:check
+
+      - name: Vitest (frontend tests)
+        run: npm run test
+
+      - name: Production build
+        run: npm run build
+
+      - name: SSR build
+        run: npm run build:ssr
