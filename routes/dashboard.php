@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Dashboard\CategoryController;
 use App\Http\Controllers\Dashboard\ProductController;
+use App\Http\Controllers\Dashboard\ProductImageController;
 use App\Http\Controllers\Dashboard\ProductOptionController;
 use App\Http\Controllers\Dashboard\ProductVariantController;
 use App\Http\Controllers\Dashboard\StoreController;
@@ -31,4 +32,8 @@ Route::middleware(['auth', 'verified', 'tenant.dashboard'])->group(function () {
     Route::post('dashboard/products/{product}/variants', [ProductVariantController::class, 'store'])->name('product-variants.store');
     Route::put('dashboard/products/{product}/variants/{variant}', [ProductVariantController::class, 'update'])->name('product-variants.update');
     Route::delete('dashboard/products/{product}/variants/{variant}', [ProductVariantController::class, 'destroy'])->name('product-variants.destroy');
+
+    Route::post('dashboard/products/{product}/images', [ProductImageController::class, 'store'])->name('product-images.store');
+    Route::put('dashboard/products/{product}/images/reorder', [ProductImageController::class, 'reorder'])->name('product-images.reorder');
+    Route::delete('dashboard/products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('product-images.destroy');
 });
