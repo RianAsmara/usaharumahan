@@ -1,5 +1,6 @@
 import { Form, Head, router } from '@inertiajs/react';
 import { useState } from 'react';
+import type { ChangeEvent } from 'react';
 import InventoryController from '@/actions/App/Http/Controllers/Dashboard/InventoryController';
 import ProductController from '@/actions/App/Http/Controllers/Dashboard/ProductController';
 import ProductImageController from '@/actions/App/Http/Controllers/Dashboard/ProductImageController';
@@ -97,6 +98,137 @@ function AddOptionForm({ productId }: { productId: string }) {
                             Simpan opsi
                         </Button>
                     </div>
+                </>
+            )}
+        </Form>
+    );
+}
+
+/**
+ * Within a single option's value group, only one value should ever be
+ * selected for a variant (a variant has at most one value per option).
+ * The inputs are plain uncontrolled checkboxes — so this manually clears
+ * any sibling checkbox in the same option group, which keeps the
+ * submitted `option_value_ids[]` limited to at most one id per option
+ * without needing native radio-button grouping (that would require every
+ * option's inputs to share one `name`, which would make options mutually
+ * exclusive with each other too).
+ */
+function handleOptionValueToggle(event: ChangeEvent<HTMLInputElement>) {
+    if (!event.target.checked) {
+        return;
+    }
+
+    const group = event.target.closest('[data-option-group]');
+
+    group
+        ?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
+        .forEach((checkbox) => {
+            if (checkbox !== event.target) {
+                checkbox.checked = false;
+            }
+        });
+}
+
+function AddVariantForm({
+    productId,
+    options,
+}: {
+    productId: string;
+    options: Option[];
+}) {
+    return (
+        <Form
+            {...ProductVariantController.store.form(productId)}
+            options={{ preserveScroll: true }}
+            resetOnSuccess
+            className="max-w-xl space-y-4 rounded-md border p-4"
+        >
+            {({ processing, errors }) => (
+                <>
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="grid gap-1">
+                            <Label htmlFor="variant-price">Harga</Label>
+                            <Input
+                                id="variant-price"
+                                name="price"
+                                type="number"
+                                min={0}
+                                required
+                            />
+                            <InputError message={errors.price} />
+                        </div>
+                        <div className="grid gap-1">
+                            <Label htmlFor="variant-sale-price">
+                                Harga diskon
+                            </Label>
+                            <Input
+                                id="variant-sale-price"
+                                name="sale_price"
+                                type="number"
+                                min={0}
+                            />
+                            <InputError message={errors.sale_price} />
+                        </div>
+                        <div className="grid gap-1">
+                            <Label htmlFor="variant-weight">Berat (gram)</Label>
+                            <Input
+                                id="variant-weight"
+                                name="weight_grams"
+                                type="number"
+                                min={0}
+                            />
+                            <InputError message={errors.weight_grams} />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-1">
+                        <Label htmlFor="variant-sku-suffix">Akhiran SKU</Label>
+                        <Input
+                            id="variant-sku-suffix"
+                            name="sku_suffix"
+                            placeholder="Contoh: M"
+                        />
+                        <InputError message={errors.sku_suffix} />
+                    </div>
+
+                    {options.length > 0 && (
+                        <div className="grid gap-3">
+                            {options.map((option) => (
+                                <div
+                                    key={option.id}
+                                    data-option-group={option.id}
+                                    className="grid gap-1"
+                                >
+                                    <Label>{option.name}</Label>
+                                    <div className="flex flex-wrap gap-3">
+                                        {option.values.map((value) => (
+                                            <label
+                                                key={value.id}
+                                                className="flex items-center gap-1 text-sm"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    name="option_value_ids[]"
+                                                    value={value.id}
+                                                    onChange={
+                                                        handleOptionValueToggle
+                                                    }
+                                                />
+                                                {value.value}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                            <InputError message={errors.option_value_ids} />
+                        </div>
+                    )}
+
+                    <Button type="submit" size="sm" disabled={processing}>
+                        {processing && <Spinner />}
+                        Tambah varian
+                    </Button>
                 </>
             )}
         </Form>
@@ -548,6 +680,13 @@ export default function ProductsEdit({ product, categories, can }: Props) {
                             </li>
                         ))}
                     </ul>
+
+                    {can.update && (
+                        <AddVariantForm
+                            productId={product.id}
+                            options={product.options}
+                        />
+                    )}
                 </section>
             </div>
         </>
