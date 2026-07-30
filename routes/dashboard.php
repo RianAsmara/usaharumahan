@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Dashboard\CategoryController;
+use App\Http\Controllers\Dashboard\InventoryController;
 use App\Http\Controllers\Dashboard\ProductController;
 use App\Http\Controllers\Dashboard\ProductImageController;
 use App\Http\Controllers\Dashboard\ProductOptionController;
@@ -36,4 +37,6 @@ Route::middleware(['auth', 'verified', 'tenant.dashboard'])->group(function () {
     Route::post('dashboard/products/{product}/images', [ProductImageController::class, 'store'])->name('product-images.store');
     Route::put('dashboard/products/{product}/images/reorder', [ProductImageController::class, 'reorder'])->name('product-images.reorder');
     Route::delete('dashboard/products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('product-images.destroy');
+
+    Route::post('dashboard/products/{product}/variants/{variant}/inventory-movements', [InventoryController::class, 'store'])->name('inventory-movements.store');
 });
