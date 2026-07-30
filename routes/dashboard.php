@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Dashboard\CategoryController;
+use App\Http\Controllers\Dashboard\ProductController;
 use App\Http\Controllers\Dashboard\StoreController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,4 +15,11 @@ Route::middleware(['auth', 'verified', 'tenant.dashboard'])->group(function () {
     Route::post('dashboard/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::put('dashboard/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('dashboard/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+    Route::get('dashboard/products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('dashboard/products/create', [ProductController::class, 'create'])->name('products.create');
+    Route::post('dashboard/products', [ProductController::class, 'store'])->name('products.store');
+    Route::get('dashboard/products/{product}', [ProductController::class, 'edit'])->name('products.edit');
+    Route::put('dashboard/products/{product}', [ProductController::class, 'update'])->name('products.update');
+    Route::delete('dashboard/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 });
