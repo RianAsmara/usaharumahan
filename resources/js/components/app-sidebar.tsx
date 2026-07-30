@@ -1,5 +1,12 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import {
+    BookOpen,
+    FolderGit2,
+    LayoutGrid,
+    Package,
+    Store as StoreIcon,
+    Tags,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -14,6 +21,9 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import * as categories from '@/routes/categories';
+import * as products from '@/routes/products';
+import * as store from '@/routes/store';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -21,6 +31,21 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Kategori',
+        href: categories.index(),
+        icon: Tags,
+    },
+    {
+        title: 'Produk',
+        href: products.index(),
+        icon: Package,
+    },
+    {
+        title: 'Toko',
+        href: store.edit(),
+        icon: StoreIcon,
     },
 ];
 
