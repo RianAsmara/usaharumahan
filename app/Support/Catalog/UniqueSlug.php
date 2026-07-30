@@ -27,7 +27,7 @@ class UniqueSlug
         while (
             DB::table($table)
                 ->where('tenant_id', $tenantId)
-                ->where($column, $candidate)
+                ->whereRaw("LOWER($column) = LOWER(?)", [$candidate])
                 ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
                 ->exists()
         ) {
