@@ -23,7 +23,12 @@ type Variant = {
     option_values: OptionValue[];
     inventory: { on_hand: number; reserved: number } | null;
 };
-type ProductImage = { id: string; path: string; sort_order: number };
+type ProductImage = {
+    id: string;
+    path: string;
+    url: string;
+    sort_order: number;
+};
 type Category = { id: string; name: string };
 
 type Product = {
@@ -230,7 +235,7 @@ export default function ProductsEdit({ product, categories, can }: Props) {
                         {product.images.map((image, index) => (
                             <div key={image.id} className="space-y-2">
                                 <img
-                                    src={`/storage/${image.path}`}
+                                    src={image.url}
                                     alt=""
                                     className="size-24 rounded-md border object-cover"
                                 />
