@@ -267,7 +267,13 @@ storefront listing/detail pages are deferred to a follow-up spec.
 - `App\Support\Catalog\UniqueSlug`: shared per-tenant unique-slug/SKU
   generator used by both categories and products (and variant SKUs), fixed
   during this phase to compare case-insensitively so uppercase SKUs are
-  correctly detected as collisions.
+  correctly detected as collisions, and — during this task's Larastan
+  clean-up — given an explicit `match`-based allow-list for the `$column`
+  argument (`slug` or `sku`, throwing on anything else) before it's
+  interpolated into a `whereRaw()` call. This both satisfies Larastan's
+  `literal-string` requirement for `whereRaw()` and closes a Minor finding
+  from Task 6's review (no allow-list guard on `$column`) that had been
+  outstanding since then.
 - Actions: `App\Actions\Catalog\CreateProduct` (creates a product with its
   first default variant and a zero-stock inventory row in one transaction),
   `App\Actions\Catalog\AddProductVariant` (variant + option-value pivot +
@@ -338,7 +344,7 @@ assertions this phase). 3 frontend (Vitest) tests unchanged.**
 | Gate | Result |
 |---|---|
 | Pint | ✅ Pass (173 files) |
-| Larastan (level 7) | ✅ 3 pre-existing errors, all in `UniqueSlug.php`/`CategoryFactory.php`/`ProductFactory.php` (`Str::slug`/`whereRaw` argument-type noise predating this task's files — see Known limitations) |
+| Larastan (level 7) | ✅ No errors (137 files analyzed) |
 | Pest | ✅ 122 passed, 423 assertions (real Postgres) |
 | ESLint | ✅ Pass |
 | Prettier | ✅ Pass |
@@ -351,13 +357,6 @@ assertions this phase). 3 frontend (Vitest) tests unchanged.**
 
 ### Known limitations
 
-- The 3 pre-existing Larastan findings (`UniqueSlug::generate`'s `whereRaw`
-  argument, and `Str::slug()`'s argument type in `CategoryFactory`/
-  `ProductFactory`) predate this task, are unrelated to any file this task
-  touched (a `.tsx` page can't affect PHP static analysis), and were already
-  flagged as pre-existing baseline noise in earlier task reports (e.g.
-  Task 2's report) — left as-is rather than opportunistically fixed, to keep
-  this task's diff scoped to the frontend page it was asked to build.
 - No dedicated Policy unit tests, matching the project's established style
   of exercising policies through their controllers' HTTP feature tests.
 - The public storefront (product listing/detail pages customers browse) is

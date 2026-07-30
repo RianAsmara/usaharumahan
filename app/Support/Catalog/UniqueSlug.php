@@ -4,6 +4,7 @@ namespace App\Support\Catalog;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 /**
  * Turns a name into a URL/SKU-safe identifier that is unique within a
@@ -20,6 +21,12 @@ class UniqueSlug
         string $column = 'slug',
         ?string $ignoreId = null,
     ): string {
+        $safeColumn = match ($column) {
+            'slug' => 'slug',
+            'sku' => 'sku',
+            default => throw new InvalidArgumentException("Unsupported column: {$column}"),
+        };
+
         $base = Str::slug($source);
         $candidate = $base;
         $suffix = 2;
@@ -27,7 +34,7 @@ class UniqueSlug
         while (
             DB::table($table)
                 ->where('tenant_id', $tenantId)
-                ->whereRaw("LOWER($column) = LOWER(?)", [$candidate])
+                ->whereRaw("LOWER($safeColumn) = LOWER(?)", [$candidate])
                 ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
                 ->exists()
         ) {

@@ -14,6 +14,7 @@ class CategoryFactory extends Factory
 {
     public function definition(): array
     {
+        /** @var string $name */
         $name = fake()->unique()->words(2, true);
 
         return [
