@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('product_option_values', function (Blueprint $table) {
             $table->ulid('id')->primary();
+            $table->foreignUlid('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignUlid('product_option_id')->constrained()->cascadeOnDelete();
             $table->string('value');
             $table->unsignedInteger('sort_order')->default(0);

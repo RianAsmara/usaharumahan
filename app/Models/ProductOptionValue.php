@@ -12,11 +12,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * @property string $id
+ * @property string $tenant_id
  * @property string $product_option_id
  * @property string $value
  * @property int $sort_order
  */
-#[Fillable(['product_option_id', 'value', 'sort_order'])]
+#[Fillable(['tenant_id', 'product_option_id', 'value', 'sort_order'])]
 class ProductOptionValue extends Model
 {
     /** @use HasFactory<ProductOptionValueFactory> */
