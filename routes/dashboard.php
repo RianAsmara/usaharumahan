@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Dashboard\CategoryController;
 use App\Http\Controllers\Dashboard\ProductController;
+use App\Http\Controllers\Dashboard\ProductOptionController;
 use App\Http\Controllers\Dashboard\StoreController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,4 +23,7 @@ Route::middleware(['auth', 'verified', 'tenant.dashboard'])->group(function () {
     Route::get('dashboard/products/{product}', [ProductController::class, 'edit'])->name('products.edit');
     Route::put('dashboard/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('dashboard/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+    Route::post('dashboard/products/{product}/options', [ProductOptionController::class, 'store'])->name('product-options.store');
+    Route::delete('dashboard/products/{product}/options/{option}', [ProductOptionController::class, 'destroy'])->name('product-options.destroy');
 });
