@@ -251,3 +251,127 @@ CRUD pages, per
 `docs/superpowers/specs/2026-07-29-phase2-catalog-inventory-design.md` and
 `docs/superpowers/plans/2026-07-29-phase2-catalog-inventory.md`. The public
 storefront listing/detail pages are deferred to a follow-up spec.
+
+## Phase 2 — Dashboard Catalog & Inventory
+
+**Status**: Complete
+
+### Implemented
+
+- `Category`, `Product`, `ProductImage`, `ProductOption`,
+  `ProductOptionValue`, `ProductVariant`, `Inventory`, `InventoryMovement`
+  models and migrations — ULID primary keys throughout, `tenant_id` on every
+  tenant-owned table, a `product_variant_option_values` pivot linking
+  variants to the option values that define them, and `Inventory` keyed
+  directly on `product_variant_id` (one row per variant).
+- `App\Support\Catalog\UniqueSlug`: shared per-tenant unique-slug/SKU
+  generator used by both categories and products (and variant SKUs), fixed
+  during this phase to compare case-insensitively so uppercase SKUs are
+  correctly detected as collisions.
+- Actions: `App\Actions\Catalog\CreateProduct` (creates a product with its
+  first default variant and a zero-stock inventory row in one transaction),
+  `App\Actions\Catalog\AddProductVariant` (variant + option-value pivot +
+  zero-stock inventory row), `App\Actions\Inventory\AdjustInventory`
+  (records a movement and updates `on_hand`, refusing to let stock go
+  negative).
+- Policies: `CategoryPolicy`, `ProductPolicy`, `InventoryPolicy` — same
+  owner-writes/any-member-reads pattern established in Phase 1, each
+  independently re-deriving tenant membership from the model. Inventory
+  adjustment (`InventoryPolicy::adjust`) is deliberately open to staff, not
+  just owners — restocking and stock corrections are a day-to-day staff
+  task, unlike catalog structure changes.
+- Dashboard controllers (all under `app/Http/Controllers/Dashboard/`):
+  `CategoryController` (full CRUD), `ProductController` (index/create/store/
+  edit/update/destroy — `store` auto-creates the first variant via
+  `CreateProduct`), `ProductImageController` (upload with a 6-image cap,
+  reorder via a full `sort_order` rewrite, delete with S3/MinIO cleanup),
+  `ProductOptionController` (add an option with up to 20 values in one call,
+  capped at 3 options per product; delete), `ProductVariantController`
+  (store/update/destroy, destroy refuses to remove a product's last
+  remaining variant), `InventoryController` (record a `restock` or
+  `adjustment` movement).
+- Dashboard pages: `dashboard/categories/index.tsx` (list + inline create/
+  edit/delete), `dashboard/products/index.tsx` (list), `products/create.tsx`
+  (name/category/description/price), and — this task —
+  `products/edit.tsx`, the single screen composing product details,
+  image management (upload, ↑/↓ reorder, delete), option management (add/
+  delete), and per-variant price/sale-price editing plus a restock/adjust
+  stock form, all gated on the `can.update` prop the backend already
+  computes from `ProductPolicy`.
+- All five dashboard-catalog controllers' Wayfinder-generated action
+  signatures (`ProductController`, `ProductImageController`,
+  `ProductOptionController`, `ProductVariantController`,
+  `InventoryController`) were individually verified against the actual
+  generated files in `resources/js/actions/App/Http/Controllers/Dashboard/`
+  before wiring `products/edit.tsx` — all matched the plan's assumed call
+  shapes exactly (single-param routes take `id | {id}`, multi-param routes
+  take a `[product, child]` tuple), so no call-site adjustments were needed
+  this task.
+
+### Tests added
+
+- `tests/Feature/Catalog/CategoryManagementTest.php`,
+  `CategoryModelTest.php` — category CRUD, authorization, tenant isolation,
+  slug uniqueness.
+- `tests/Feature/Catalog/CreateProductActionTest.php`,
+  `AddProductVariantActionTest.php`, `ProductCatalogModelTest.php` — action
+  and model-level coverage for the product/variant/option graph.
+- `tests/Feature/Catalog/ProductManagementTest.php` (7 tests, including
+  `staff_can_view_but_not_update_a_product`, which stayed red from Task 9
+  until this task's frontend page existed for it to render),
+  `ProductImageManagementTest.php`, `ProductOptionManagementTest.php`,
+  `ProductVariantManagementTest.php` — full HTTP-level CRUD, authorization,
+  and cross-tenant/cross-product ownership checks for every catalog
+  controller.
+- `tests/Feature/Inventory/AdjustInventoryActionTest.php`,
+  `InventoryAdjustmentHttpTest.php`, `InventoryModelTest.php` — stock
+  movement accounting (including "cannot go negative") at both the action
+  and HTTP layer, plus the staff-can-adjust-but-not-restructure-catalog
+  authorization split.
+
+**Total: 122 backend tests / 423 assertions passing on Postgres (up from 71
+tests / 284 assertions at the end of Phase 1 — 51 new tests / 139 new
+assertions this phase). 3 frontend (Vitest) tests unchanged.**
+
+### Quality results
+
+| Gate | Result |
+|---|---|
+| Pint | ✅ Pass (173 files) |
+| Larastan (level 7) | ✅ 3 pre-existing errors, all in `UniqueSlug.php`/`CategoryFactory.php`/`ProductFactory.php` (`Str::slug`/`whereRaw` argument-type noise predating this task's files — see Known limitations) |
+| Pest | ✅ 122 passed, 423 assertions (real Postgres) |
+| ESLint | ✅ Pass |
+| Prettier | ✅ Pass |
+| TypeScript (`tsc --noEmit`) | ✅ Pass |
+| Vitest | ✅ 3 passed |
+| Production build (`vite build`) | ✅ Succeeds |
+| SSR build (`vite build --ssr`) | ✅ Succeeds |
+| `ProductManagementTest` | ✅ 7/7 (was 6/7 before this task — `test_staff_can_view_but_not_update_a_product` needed `products/edit.tsx` to exist) |
+| Curl smoke test (real HTTP, cookie-jar login, against the running dev stack) | ✅ Owner GET on `/dashboard/products/{id}` → 200, Inertia payload resolves the `dashboard/products/edit` component with the exact prop shape the page expects (`product.category`, `images[]`, `options[]`, `variants[]`, `can.update: true`); staff GET on the same URL → 200 with `can.update: false`. All markers (`Detail produk`, `Gambar`, `Opsi`, `Varian`, …) confirmed present in the compiled page bundle. |
+
+### Known limitations
+
+- The 3 pre-existing Larastan findings (`UniqueSlug::generate`'s `whereRaw`
+  argument, and `Str::slug()`'s argument type in `CategoryFactory`/
+  `ProductFactory`) predate this task, are unrelated to any file this task
+  touched (a `.tsx` page can't affect PHP static analysis), and were already
+  flagged as pre-existing baseline noise in earlier task reports (e.g.
+  Task 2's report) — left as-is rather than opportunistically fixed, to keep
+  this task's diff scoped to the frontend page it was asked to build.
+- No dedicated Policy unit tests, matching the project's established style
+  of exercising policies through their controllers' HTTP feature tests.
+- The public storefront (product listing/detail pages customers browse) is
+  entirely out of scope for this phase — the dashboard is the only
+  interface to the catalog so far.
+- Image reordering (`moveImage`) always sends the *full* reordered
+  `image_ids` array on every ↑/↓ click rather than a partial diff; fine at
+  the 6-image cap this phase enforces, but worth revisiting if that cap
+  ever grows.
+
+### Next phase
+
+Public storefront listing/detail pages: hostname-resolved storefront routes
+(`ResolveTenantFromHostname`, already built in Phase 1) rendering the
+catalog built in this phase — product listing by category, product detail
+with variant/option selection and live stock — plus whatever cart/checkout
+groundwork the next spec scopes in.
