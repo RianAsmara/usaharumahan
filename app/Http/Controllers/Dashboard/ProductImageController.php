@@ -7,6 +7,7 @@ use App\Http\Requests\Catalog\ReorderProductImagesRequest;
 use App\Http\Requests\Catalog\UploadProductImageRequest;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -16,9 +17,10 @@ class ProductImageController extends Controller
 {
     private const MAX_IMAGES_PER_PRODUCT = 6;
 
-    public function store(UploadProductImageRequest $request, Product $product): RedirectResponse
+    public function store(UploadProductImageRequest $request, Product $product, TenantContext $tenantContext): RedirectResponse
     {
         Gate::authorize('update', $product);
+        $this->assertProductBelongsToActiveTenant($product, $tenantContext);
 
         if ($product->images()->count() >= self::MAX_IMAGES_PER_PRODUCT) {
             throw new HttpException(422, 'Maksimal '.self::MAX_IMAGES_PER_PRODUCT.' gambar per produk.');
@@ -36,9 +38,10 @@ class ProductImageController extends Controller
         return redirect()->route('products.edit', $product);
     }
 
-    public function reorder(ReorderProductImagesRequest $request, Product $product): RedirectResponse
+    public function reorder(ReorderProductImagesRequest $request, Product $product, TenantContext $tenantContext): RedirectResponse
     {
         Gate::authorize('update', $product);
+        $this->assertProductBelongsToActiveTenant($product, $tenantContext);
 
         $imageIds = $request->array('image_ids');
         $ownedCount = $product->images()->whereIn('id', $imageIds)->count();
@@ -54,14 +57,27 @@ class ProductImageController extends Controller
         return redirect()->route('products.edit', $product);
     }
 
-    public function destroy(Product $product, ProductImage $image): RedirectResponse
+    public function destroy(Product $product, ProductImage $image, TenantContext $tenantContext): RedirectResponse
     {
         Gate::authorize('update', $product);
+        $this->assertProductBelongsToActiveTenant($product, $tenantContext);
         abort_unless($image->product_id === $product->id, 404);
 
         Storage::disk('s3')->delete($image->path);
         $image->delete();
 
         return redirect()->route('products.edit', $product);
+    }
+
+    /**
+     * A user can be an Owner of more than one tenant at once, so a
+     * route-bound $product belonging to a tenant the user owns but does
+     * NOT currently have selected must be rejected — see
+     * `ProductController::assertProductBelongsToActiveTenant()` for the
+     * full rationale.
+     */
+    private function assertProductBelongsToActiveTenant(Product $product, TenantContext $tenantContext): void
+    {
+        abort_unless($product->tenant_id === $tenantContext->tenantId(), 404);
     }
 }

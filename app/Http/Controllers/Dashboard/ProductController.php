@@ -71,6 +71,7 @@ class ProductController extends Controller
     public function edit(Product $product, TenantContext $tenantContext): Response
     {
         Gate::authorize('view', $product);
+        $this->assertProductBelongsToActiveTenant($product, $tenantContext);
 
         $product->load(['category', 'images', 'options.values', 'variants.optionValues.option', 'variants.inventory']);
 
@@ -86,9 +87,10 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(UpdateProductRequest $request, Product $product): RedirectResponse
+    public function update(UpdateProductRequest $request, Product $product, TenantContext $tenantContext): RedirectResponse
     {
         Gate::authorize('update', $product);
+        $this->assertProductBelongsToActiveTenant($product, $tenantContext);
 
         $status = $request->enum('status', ProductStatus::class);
 
@@ -105,12 +107,27 @@ class ProductController extends Controller
         return redirect()->route('products.edit', $product);
     }
 
-    public function destroy(Product $product): RedirectResponse
+    public function destroy(Product $product, TenantContext $tenantContext): RedirectResponse
     {
         Gate::authorize('delete', $product);
+        $this->assertProductBelongsToActiveTenant($product, $tenantContext);
 
         $product->delete();
 
         return redirect()->route('products.index');
+    }
+
+    /**
+     * A user can be an Owner of more than one tenant at once (see
+     * `ResolveTenantForDashboard`). The Policy only checks generic
+     * membership, so a route-bound product belonging to a tenant the user
+     * owns but does NOT currently have selected must be rejected here —
+     * otherwise a request scoped to the active tenant (e.g. its category
+     * list in `UpdateProductRequest`) could silently act on a different
+     * tenant's product.
+     */
+    private function assertProductBelongsToActiveTenant(Product $product, TenantContext $tenantContext): void
+    {
+        abort_unless($product->tenant_id === $tenantContext->tenantId(), 404);
     }
 }

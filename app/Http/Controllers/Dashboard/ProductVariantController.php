@@ -9,15 +9,17 @@ use App\Http\Requests\Catalog\UpdateProductVariantRequest;
 use App\Models\Product;
 use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ProductVariantController extends Controller
 {
-    public function store(CreateProductVariantRequest $request, Product $product, AddProductVariant $addProductVariant): RedirectResponse
+    public function store(CreateProductVariantRequest $request, Product $product, AddProductVariant $addProductVariant, TenantContext $tenantContext): RedirectResponse
     {
         Gate::authorize('update', $product);
+        $this->assertProductBelongsToActiveTenant($product, $tenantContext);
 
         $optionValueIds = $request->array('option_value_ids');
         $this->assertOptionValuesBelongToProduct($product, $optionValueIds);
@@ -34,9 +36,10 @@ class ProductVariantController extends Controller
         return redirect()->route('products.edit', $product);
     }
 
-    public function update(UpdateProductVariantRequest $request, Product $product, ProductVariant $variant): RedirectResponse
+    public function update(UpdateProductVariantRequest $request, Product $product, ProductVariant $variant, TenantContext $tenantContext): RedirectResponse
     {
         Gate::authorize('update', $product);
+        $this->assertProductBelongsToActiveTenant($product, $tenantContext);
         $this->assertVariantBelongsToProduct($product, $variant);
 
         $variant->update([
@@ -48,9 +51,10 @@ class ProductVariantController extends Controller
         return redirect()->route('products.edit', $product);
     }
 
-    public function destroy(Product $product, ProductVariant $variant): RedirectResponse
+    public function destroy(Product $product, ProductVariant $variant, TenantContext $tenantContext): RedirectResponse
     {
         Gate::authorize('update', $product);
+        $this->assertProductBelongsToActiveTenant($product, $tenantContext);
         $this->assertVariantBelongsToProduct($product, $variant);
 
         abort_if($product->variants()->count() <= 1, 422, 'Produk harus memiliki minimal satu varian.');
@@ -82,5 +86,17 @@ class ProductVariantController extends Controller
     private function assertVariantBelongsToProduct(Product $product, ProductVariant $variant): void
     {
         abort_unless($variant->product_id === $product->id, 404);
+    }
+
+    /**
+     * A user can be an Owner of more than one tenant at once, so a
+     * route-bound $product belonging to a tenant the user owns but does
+     * NOT currently have selected must be rejected — see
+     * `ProductController::assertProductBelongsToActiveTenant()` for the
+     * full rationale.
+     */
+    private function assertProductBelongsToActiveTenant(Product $product, TenantContext $tenantContext): void
+    {
+        abort_unless($product->tenant_id === $tenantContext->tenantId(), 404);
     }
 }

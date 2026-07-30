@@ -5,6 +5,10 @@ namespace Tests\Feature\Catalog;
 use App\Enums\ProductStatus;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Store;
+use App\Models\Tenant;
+use App\Models\TenantMembership;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesTenants;
 use Tests\TestCase;
@@ -111,5 +115,50 @@ class ProductManagementTest extends TestCase
 
         $this->actingAs($ownerA)->get(route('products.edit', $productB))->assertForbidden();
         $this->actingAs($ownerA)->put(route('products.update', $productB), ['name' => 'Dibajak', 'status' => ProductStatus::Draft->value])->assertForbidden();
+    }
+
+    public function test_an_owner_of_two_tenants_cannot_assign_the_non_active_tenants_category_to_the_other_tenants_product(): void
+    {
+        // A single user who is Owner of BOTH tenant A and tenant B. With
+        // tenant A resolved as the active dashboard tenant (the first
+        // membership, per ResolveTenantForDashboard's fallback), the user
+        // attempts to update tenant B's product and slip in a category_id
+        // that belongs to tenant A. The Policy alone would allow this
+        // (the user genuinely owns product B), so this proves the
+        // "active tenant" guard in ProductController::update() actually
+        // blocks it, and that it's blocked before the category ever gets
+        // written onto product B.
+        $owner = User::factory()->create();
+
+        $tenantA = Tenant::factory()->create(['owner_user_id' => $owner->id]);
+        TenantMembership::factory()->owner()->create([
+            'tenant_id' => $tenantA->id,
+            'user_id' => $owner->id,
+        ]);
+        Store::factory()->create(['tenant_id' => $tenantA->id]);
+
+        $tenantB = Tenant::factory()->create(['owner_user_id' => $owner->id]);
+        TenantMembership::factory()->owner()->create([
+            'tenant_id' => $tenantB->id,
+            'user_id' => $owner->id,
+        ]);
+        Store::factory()->create(['tenant_id' => $tenantB->id]);
+
+        $categoryA = Category::factory()->create(['tenant_id' => $tenantA->id]);
+        $productB = Product::factory()->create(['tenant_id' => $tenantB->id, 'category_id' => null]);
+
+        // Resolve tenant A as active by hitting a dashboard route first —
+        // ResolveTenantForDashboard falls back to the user's first
+        // membership (tenant A, created above) and stores it in session.
+        $this->actingAs($owner)->get(route('products.index'))->assertOk();
+
+        $response = $this->actingAs($owner)->put(route('products.update', $productB), [
+            'name' => $productB->name,
+            'category_id' => $categoryA->id,
+            'status' => ProductStatus::Draft->value,
+        ]);
+
+        $response->assertNotFound();
+        $this->assertNull($productB->fresh()->category_id);
     }
 }

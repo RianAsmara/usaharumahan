@@ -52,9 +52,10 @@ class CategoryController extends Controller
         return redirect()->route('categories.index');
     }
 
-    public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse
+    public function update(UpdateCategoryRequest $request, Category $category, TenantContext $tenantContext): RedirectResponse
     {
         Gate::authorize('update', $category);
+        $this->assertCategoryBelongsToActiveTenant($category, $tenantContext);
 
         $category->update([
             'name' => $request->string('name')->toString(),
@@ -71,12 +72,26 @@ class CategoryController extends Controller
         return redirect()->route('categories.index');
     }
 
-    public function destroy(Category $category): RedirectResponse
+    public function destroy(Category $category, TenantContext $tenantContext): RedirectResponse
     {
         Gate::authorize('delete', $category);
+        $this->assertCategoryBelongsToActiveTenant($category, $tenantContext);
 
         $category->delete();
 
         return redirect()->route('categories.index');
+    }
+
+    /**
+     * A user can be an Owner of more than one tenant at once (see
+     * `ResolveTenantForDashboard`). The Policy only checks generic
+     * membership, so a route-bound model belonging to a tenant the user
+     * owns but does NOT currently have selected must be rejected here —
+     * otherwise a category from tenant A could be mutated while tenant B
+     * is the active dashboard context.
+     */
+    private function assertCategoryBelongsToActiveTenant(Category $category, TenantContext $tenantContext): void
+    {
+        abort_unless($category->tenant_id === $tenantContext->tenantId(), 404);
     }
 }
