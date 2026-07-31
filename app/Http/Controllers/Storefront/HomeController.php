@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use App\Support\Tenancy\TenantContext;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,14 +25,26 @@ class HomeController extends Controller
         $tenant = $tenantContext->tenant();
         $store = $tenant->store;
 
+        $products = Product::query()
+            ->where('tenant_id', $tenant->id)
+            ->published()
+            ->with([
+                'images' => fn ($query) => $query->limit(1),
+                'variants.inventory',
+            ])
+            ->get()
+            ->map(fn (Product $product): array => [
+                'id' => $product->id,
+                'slug' => $product->slug,
+                'name' => $product->name,
+                'imageUrl' => $product->images->first()?->url,
+                'price' => $product->displayPrice(),
+                'inStock' => $product->isInStock(),
+            ]);
+
         return Inertia::render('storefront/home', [
-            'store' => [
-                'name' => $store->name,
-                'description' => $store->description,
-                'whatsappNumber' => $store->whatsapp_number,
-                'isOpen' => $store->is_open,
-                'primaryColor' => $store->primary_color,
-            ],
+            'store' => $store->toStorefrontArray(),
+            'products' => $products,
         ]);
     }
 }
