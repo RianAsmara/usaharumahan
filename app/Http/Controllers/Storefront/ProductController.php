@@ -11,10 +11,11 @@ use App\Models\ProductVariant;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProductController extends Controller
 {
-    public function show(string $slug, TenantContext $tenantContext, Request $request): \Symfony\Component\HttpFoundation\Response
+    public function show(string $slug, TenantContext $tenantContext, Request $request): Response
     {
         $tenant = $tenantContext->tenant();
 

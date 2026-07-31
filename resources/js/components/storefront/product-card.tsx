@@ -16,7 +16,10 @@ type Props = {
 
 export function ProductCard({ product }: Props) {
     return (
-        <Link href={`/produk/${product.slug}`} className="group flex flex-col gap-2">
+        <Link
+            href={`/produk/${product.slug}`}
+            className="group flex flex-col gap-2"
+        >
             <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[var(--storefront-paper-muted)] shadow-[0_6px_16px_-10px_oklch(0.22_0.02_60/0.4)]">
                 {product.imageUrl ? (
                     <img
@@ -38,9 +41,17 @@ export function ProductCard({ product }: Props) {
                 )}
             </div>
             <div className="space-y-0.5">
-                <p className="line-clamp-2 text-sm font-medium">{product.name}</p>
-                {product.price.isFrom && <p className="text-xs text-[var(--storefront-ink)]/60">Mulai dari</p>}
-                <p className="font-semibold text-[var(--tenant-accent)]">{formatRupiah(product.price.amount)}</p>
+                <p className="line-clamp-2 text-sm font-medium">
+                    {product.name}
+                </p>
+                {product.price.isFrom && (
+                    <p className="text-xs text-[var(--storefront-ink)]/60">
+                        Mulai dari
+                    </p>
+                )}
+                <p className="font-semibold text-[var(--tenant-accent)]">
+                    {formatRupiah(product.price.amount)}
+                </p>
             </div>
         </Link>
     );

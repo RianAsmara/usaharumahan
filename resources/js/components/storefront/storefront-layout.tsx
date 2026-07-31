@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { DEFAULT_TENANT_COLOR, deriveTenantPalette } from '@/lib/tenant-theme';
 
 type Props = {
@@ -16,7 +16,10 @@ export function StorefrontLayout({ primaryColor, children }: Props) {
     } as CSSProperties;
 
     return (
-        <div className="storefront min-h-screen bg-[var(--storefront-paper)] text-[var(--storefront-ink)]" style={style}>
+        <div
+            className="storefront min-h-screen bg-[var(--storefront-paper)] text-[var(--storefront-ink)]"
+            style={style}
+        >
             {children}
         </div>
     );

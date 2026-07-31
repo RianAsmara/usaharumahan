@@ -7,9 +7,12 @@ export default function StorefrontNotFound() {
             <Head title="Produk tidak ditemukan" />
 
             <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-3 px-4 text-center">
-                <p className="font-serif text-3xl font-semibold">Produk tidak ditemukan</p>
+                <p className="font-serif text-3xl font-semibold">
+                    Produk tidak ditemukan
+                </p>
                 <p className="text-[var(--storefront-ink)]/70">
-                    Produk yang Anda cari sudah tidak tersedia atau alamatnya salah.
+                    Produk yang Anda cari sudah tidak tersedia atau alamatnya
+                    salah.
                 </p>
                 <Link
                     href="/"

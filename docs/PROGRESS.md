@@ -420,10 +420,68 @@ frontend (Vitest) tests unchanged. Pint, Larastan (level 7), ESLint,
 Prettier, `tsc --noEmit`, `vite build`, and `vite build --ssr` all still
 pass.**
 
+### Storefront catalog listing/detail (public)
+
+Closes the "public listing/detail" item still open in Phase 2's scope, per
+`docs/superpowers/plans/2026-07-31-storefront-catalog-backend.md` and
+`docs/superpowers/plans/2026-07-31-storefront-catalog-frontend.md` (design
+specs: `docs/superpowers/specs/2026-07-31-storefront-catalog-listing-design.md`,
+`docs/superpowers/specs/2026-07-31-storefront-visual-design.md`).
+
+- `Product::scopePublished()` — the single source of truth for "is this
+  product visible to a customer" (`status = Active`, `published_at` set and
+  in the past), used by both the home grid and detail queries so neither
+  re-implements the condition inline. `Product->displayPrice()` (cheapest
+  effective price across variants, `isFrom` flagging a range) and
+  `Product->isInStock()` round out the model.
+- `Store->logo_url`/`banner_url` accessors (resolved from the `s3` disk,
+  same pattern as `ProductImage::url()`) and `Store->toStorefrontArray()`.
+- `HomeController` now lists published products on `/` (hostname-resolved
+  via `TenantContext`, not session-selected); `Storefront\ProductController
+  ::show` adds `GET /produk/{slug}`, looking the product up manually by
+  `tenant_id` + `slug` (never route-model binding, since binding can't
+  scope by the hostname-resolved tenant) and rendering options/variants/
+  stock for the option picker.
+- Visual layer: a `.storefront`-scoped CSS token system (fixed "paper/ink"
+  neutrals + tenant-derived OKLCH accent colors — hue taken from
+  `Store.primary_color`, lightness/chroma clamped so any seller-chosen hex
+  stays legible) isolated from the dashboard's shadcn theme, Fraunces
+  (headings) / Figtree (body) fonts, and a shared `StorefrontLayout` +
+  `ProductCard`. Small pure-function libs (`currency`, `tenant-theme`,
+  `variant-resolution`) carry logic unit-tested independently of React.
+- Pages: the home grid (banner/logo, open/closed badge, WhatsApp link,
+  product grid with "Mulai dari" range pricing and out-of-stock badges),
+  the product detail page (image gallery, option picker resolving to a
+  variant client-side from the full variant list already sent — no round
+  trip — price/stock reflecting the selected variant), and a branded
+  `storefront/not-found` page rendered with a 404 status for any
+  missing/foreign/unpublished product or slug.
+- No cart, checkout, WhatsApp order deep-linking, search/category filters,
+  pagination, or SEO metadata — all explicitly out of scope for this slice
+  (Phase 3+ per `docs/ROADMAP.md`).
+
+**Totals: 141 backend tests / 528 assertions passing on Postgres (up from
+123/426 — 18 new tests / 102 new assertions this slice). 26 frontend
+(Vitest) tests (up from 3 — 23 new: `currency`, `tenant-theme`,
+`variant-resolution`, `product-card`). Pint, Larastan (level 7), ESLint,
+Prettier, `tsc --noEmit`, `vite build`, and `vite build --ssr` all pass.**
+
+**Known limitation:** the manual browser smoke test (Task 9 of the frontend
+plan) could not be completed this session — the dev machine's host-to-
+container Docker networking broke while this work was in progress (traffic
+to the compose stack's custom bridge network stopped reaching any
+container from the host, even though container-to-container traffic and
+the app's own automated test suite, which runs entirely inside the `app`
+container, were unaffected). Diagnosed down to packets not reaching
+Docker's own `DOCKER`/`FORWARD` iptables chains at all — most likely a
+separate `nftables` ruleset (from `ufw`) or a kernel bridge-forwarding
+setting outside this repo's scope. Every other verification gate in the
+table above passed against the real stack (backend tests hit real
+Postgres/Redis/MinIO inside the `app` container). A manual pass in a
+browser against a seeded tenant subdomain is still worth doing once the
+host networking is sorted.
+
 ### Next phase
 
-Public storefront listing/detail pages: hostname-resolved storefront routes
-(`ResolveTenantFromHostname`, already built in Phase 1) rendering the
-catalog built in this phase — product listing by category, product detail
-with variant/option selection and live stock — plus whatever cart/checkout
-groundwork the next spec scopes in.
+Phase 3 — cart and storefront: guest cart, category pages, search, mobile
+UI polish, SEO metadata, SSR storefront, per `docs/ROADMAP.md`.

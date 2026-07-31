@@ -2,7 +2,11 @@ import { Head, Link } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { StorefrontLayout } from '@/components/storefront/storefront-layout';
 import { formatRupiah } from '@/lib/currency';
-import { findMatchingVariant, isValueAvailable, type Variant } from '@/lib/variant-resolution';
+import {
+    findMatchingVariant,
+    isValueAvailable,
+} from '@/lib/variant-resolution';
+import type { Variant } from '@/lib/variant-resolution';
 
 type Store = {
     name: string;
@@ -40,9 +44,12 @@ export default function ProductShow({ store, product }: Props) {
         () =>
             product.variants.reduce((cheapest, candidate) => {
                 const cheapestEffective = cheapest.salePrice ?? cheapest.price;
-                const candidateEffective = candidate.salePrice ?? candidate.price;
+                const candidateEffective =
+                    candidate.salePrice ?? candidate.price;
 
-                return candidateEffective < cheapestEffective ? candidate : cheapest;
+                return candidateEffective < cheapestEffective
+                    ? candidate
+                    : cheapest;
             }, product.variants[0]),
         [product.variants],
     );
@@ -57,7 +64,10 @@ export default function ProductShow({ store, product }: Props) {
             <Head title={product.name} />
 
             <div className="mx-auto max-w-4xl px-4 py-6">
-                <Link href="/" className="text-sm text-[var(--storefront-ink)]/60 hover:text-[var(--tenant-accent)]">
+                <Link
+                    href="/"
+                    className="text-sm text-[var(--storefront-ink)]/60 hover:text-[var(--tenant-accent)]"
+                >
                     ← Kembali ke etalase
                 </Link>
 
@@ -80,10 +90,16 @@ export default function ProductShow({ store, product }: Props) {
                                         type="button"
                                         onClick={() => setActiveImage(index)}
                                         className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${
-                                            index === activeImage ? 'border-[var(--tenant-accent)]' : 'border-transparent'
+                                            index === activeImage
+                                                ? 'border-[var(--tenant-accent)]'
+                                                : 'border-transparent'
                                         }`}
                                     >
-                                        <img src={image.url} alt="" className="h-full w-full object-cover" />
+                                        <img
+                                            src={image.url}
+                                            alt=""
+                                            className="h-full w-full object-cover"
+                                        />
                                     </button>
                                 ))}
                             </div>
@@ -91,10 +107,14 @@ export default function ProductShow({ store, product }: Props) {
                     </div>
 
                     <div className="space-y-5">
-                        <h1 className="font-serif text-2xl font-semibold">{product.name}</h1>
+                        <h1 className="font-serif text-2xl font-semibold">
+                            {product.name}
+                        </h1>
 
                         <div className="flex items-baseline gap-2">
-                            <p className="text-xl font-semibold text-[var(--tenant-accent)]">{formatRupiah(price)}</p>
+                            <p className="text-xl font-semibold text-[var(--tenant-accent)]">
+                                {formatRupiah(price)}
+                            </p>
                             {originalPrice && (
                                 <p className="text-sm text-[var(--storefront-ink)]/40 line-through">
                                     {formatRupiah(originalPrice)}
@@ -105,7 +125,9 @@ export default function ProductShow({ store, product }: Props) {
                         <p className="flex items-center gap-2 text-sm">
                             <span
                                 className={`h-2 w-2 rounded-full ${
-                                    inStock ? 'bg-[var(--storefront-status-open)]' : 'bg-[var(--storefront-status-warning)]'
+                                    inStock
+                                        ? 'bg-[var(--storefront-status-open)]'
+                                        : 'bg-[var(--storefront-status-warning)]'
                                 }`}
                             />
                             {inStock ? 'Stok tersedia' : 'Stok habis'}
@@ -118,15 +140,26 @@ export default function ProductShow({ store, product }: Props) {
                                 </p>
                                 <div className="flex flex-wrap gap-2">
                                     {option.values.map((value) => {
-                                        const isSelected = selected[option.id] === value.id;
-                                        const available = isValueAvailable(product.variants, option.id, value.id, selected);
+                                        const isSelected =
+                                            selected[option.id] === value.id;
+                                        const available = isValueAvailable(
+                                            product.variants,
+                                            option.id,
+                                            value.id,
+                                            selected,
+                                        );
 
                                         return (
                                             <button
                                                 key={value.id}
                                                 type="button"
                                                 disabled={!available}
-                                                onClick={() => setSelected((prev) => ({ ...prev, [option.id]: value.id }))}
+                                                onClick={() =>
+                                                    setSelected((prev) => ({
+                                                        ...prev,
+                                                        [option.id]: value.id,
+                                                    }))
+                                                }
                                                 className={`rounded-full border px-4 py-1.5 text-sm transition ${
                                                     isSelected
                                                         ? 'border-[var(--tenant-accent)] bg-[var(--tenant-accent)] text-white'
@@ -134,7 +167,11 @@ export default function ProductShow({ store, product }: Props) {
                                                 } ${!available ? 'cursor-not-allowed opacity-40' : ''}`}
                                             >
                                                 {value.value}
-                                                {!available && <span className="ml-1 text-xs">(habis)</span>}
+                                                {!available && (
+                                                    <span className="ml-1 text-xs">
+                                                        (habis)
+                                                    </span>
+                                                )}
                                             </button>
                                         );
                                     })}
@@ -143,7 +180,9 @@ export default function ProductShow({ store, product }: Props) {
                         ))}
 
                         {product.description && (
-                            <p className="whitespace-pre-line text-[var(--storefront-ink)]/80">{product.description}</p>
+                            <p className="whitespace-pre-line text-[var(--storefront-ink)]/80">
+                                {product.description}
+                            </p>
                         )}
                     </div>
                 </div>

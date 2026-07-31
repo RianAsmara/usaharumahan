@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { ProductCard, type StorefrontProduct } from './product-card';
+import { ProductCard } from './product-card';
+import type { StorefrontProduct } from './product-card';
 
 const baseProduct: StorefrontProduct = {
     id: '1',
@@ -20,7 +21,14 @@ describe('ProductCard', () => {
     });
 
     it('shows a "Mulai dari" label when the price is a range', () => {
-        render(<ProductCard product={{ ...baseProduct, price: { amount: 15000, isFrom: true } }} />);
+        render(
+            <ProductCard
+                product={{
+                    ...baseProduct,
+                    price: { amount: 15000, isFrom: true },
+                }}
+            />,
+        );
 
         expect(screen.getByText('Mulai dari')).toBeInTheDocument();
     });
@@ -40,6 +48,9 @@ describe('ProductCard', () => {
     it('links to the product detail page', () => {
         render(<ProductCard product={baseProduct} />);
 
-        expect(screen.getByRole('link')).toHaveAttribute('href', '/produk/keripik-singkong');
+        expect(screen.getByRole('link')).toHaveAttribute(
+            'href',
+            '/produk/keripik-singkong',
+        );
     });
 });

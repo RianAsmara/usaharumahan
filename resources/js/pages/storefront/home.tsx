@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
-import { ProductCard, type StorefrontProduct } from '@/components/storefront/product-card';
+import { ProductCard } from '@/components/storefront/product-card';
+import type { StorefrontProduct } from '@/components/storefront/product-card';
 import { StorefrontLayout } from '@/components/storefront/storefront-layout';
 
 type Store = {
@@ -18,7 +19,9 @@ type Props = {
 };
 
 export default function StorefrontHome({ store, products }: Props) {
-    const whatsappHref = store.whatsappNumber ? `https://wa.me/${store.whatsappNumber.replace(/[^0-9]/g, '')}` : null;
+    const whatsappHref = store.whatsappNumber
+        ? `https://wa.me/${store.whatsappNumber.replace(/[^0-9]/g, '')}`
+        : null;
 
     return (
         <StorefrontLayout primaryColor={store.primaryColor}>
@@ -29,11 +32,20 @@ export default function StorefrontHome({ store, products }: Props) {
                     className="aspect-[16/9] w-full sm:aspect-[21/9]"
                     style={
                         store.bannerUrl
-                            ? { backgroundImage: `url(${store.bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                            : { backgroundImage: 'linear-gradient(135deg, var(--tenant-tint), var(--storefront-paper))' }
+                            ? {
+                                  backgroundImage: `url(${store.bannerUrl})`,
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                              }
+                            : {
+                                  backgroundImage:
+                                      'linear-gradient(135deg, var(--tenant-tint), var(--storefront-paper))',
+                              }
                     }
                 >
-                    {!store.bannerUrl && <div className="storefront-banner-grain h-full w-full" />}
+                    {!store.bannerUrl && (
+                        <div className="storefront-banner-grain h-full w-full" />
+                    )}
                 </div>
 
                 <div className="mx-auto -mt-10 max-w-3xl px-4">
@@ -53,7 +65,9 @@ export default function StorefrontHome({ store, products }: Props) {
 
             <div className="mx-auto max-w-3xl space-y-6 px-4 pt-4 pb-16">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="font-serif text-2xl font-semibold">{store.name}</h1>
+                    <h1 className="font-serif text-2xl font-semibold">
+                        {store.name}
+                    </h1>
                     <span
                         className={`rounded-full px-3 py-1 text-xs font-medium ${
                             store.isOpen
@@ -65,7 +79,11 @@ export default function StorefrontHome({ store, products }: Props) {
                     </span>
                 </div>
 
-                {store.description && <p className="text-[var(--storefront-ink)]/80">{store.description}</p>}
+                {store.description && (
+                    <p className="text-[var(--storefront-ink)]/80">
+                        {store.description}
+                    </p>
+                )}
 
                 {whatsappHref && (
                     <a
@@ -80,8 +98,12 @@ export default function StorefrontHome({ store, products }: Props) {
 
                 {products.length === 0 ? (
                     <div className="flex flex-col items-center gap-2 py-16 text-center text-[var(--storefront-ink)]/60">
-                        <p className="font-serif text-lg">Belum ada produk dipajang</p>
-                        <p className="text-sm">Pantau terus, produk akan segera hadir.</p>
+                        <p className="font-serif text-lg">
+                            Belum ada produk dipajang
+                        </p>
+                        <p className="text-sm">
+                            Pantau terus, produk akan segera hadir.
+                        </p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">

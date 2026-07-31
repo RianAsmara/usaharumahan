@@ -1,7 +1,9 @@
 export const DEFAULT_TENANT_COLOR = '#C2703D';
 
 function srgbToLinear(channel: number): number {
-    return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+    return channel <= 0.04045
+        ? channel / 12.92
+        : Math.pow((channel + 0.055) / 1.055, 2.4);
 }
 
 /**
@@ -24,11 +26,15 @@ export function hexToOklch(hex: string): { l: number; c: number; h: number } {
 
     const l = 0.2104542553 * lRoot + 0.793617785 * mRoot - 0.0040720468 * sRoot;
     const a = 1.9779984951 * lRoot - 2.428592205 * mRoot + 0.4505937099 * sRoot;
-    const bLab = 0.0259040371 * lRoot + 0.7827717662 * mRoot - 0.808675766 * sRoot;
+    const bLab =
+        0.0259040371 * lRoot + 0.7827717662 * mRoot - 0.808675766 * sRoot;
 
     const c = Math.sqrt(a * a + bLab * bLab);
     let h = (Math.atan2(bLab, a) * 180) / Math.PI;
-    if (h < 0) h += 360;
+
+    if (h < 0) {
+        h += 360;
+    }
 
     return { l, c, h };
 }
