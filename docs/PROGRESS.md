@@ -367,6 +367,59 @@ assertions this phase). 3 frontend (Vitest) tests unchanged.**
   the 6-image cap this phase enforces, but worth revisiting if that cap
   ever grows.
 
+### Final review fixes (post-completion, whole-branch review)
+
+A whole-branch review performed after all 15 tasks landed found 3 Critical,
+cross-cutting issues invisible to any single task's own review (each task
+passed independently) — all fixed in this pass, verified, and committed as
+3 separate commits:
+
+- **Broken image URLs.** `ProductImageController::store()` has always saved
+  uploads to the `s3` disk (MinIO locally — this app's `FILESYSTEM_DISK`),
+  but `products/edit.tsx` built `<img src>` as `/storage/${image.path}`,
+  the local `public` disk's symlink path — a different disk entirely. Every
+  uploaded image was a broken `<img>` tag. Fixed by adding a `url` accessor
+  to `ProductImage` (`Storage::disk('s3')->url($this->path)`, appended via
+  `$appends` so it's always present on the Inertia payload) and switching
+  the frontend to `image.url`. Verified end-to-end with a curl smoke test:
+  uploaded a real file through the running dev stack and confirmed
+  `images[].url` in the Inertia JSON resolves to the actual MinIO URL
+  (`http://localhost:9000/usaharumahan/products/...`), not `/storage/...`.
+- **Cross-tenant category assignment.** A user who is Owner of two tenants
+  at once (explicitly supported — see `ResolveTenantForDashboard`) could
+  act on a route-bound model belonging to a tenant they own but do *not*
+  currently have selected in session, because every catalog/inventory
+  Policy only checked generic membership, never "is this the active
+  tenant." Concretely: with tenant A selected, `PUT
+  /dashboard/products/{productB}` passed `ProductPolicy::update()` (true —
+  they own B too), but `UpdateProductRequest`'s `category_id` rule
+  validated against tenant A (the session-selected tenant via
+  `TenantContext`), so a category belonging to A could be silently
+  attached to a product in B — a cross-tenant foreign key. Fixed by adding
+  an `assert*BelongsToActiveTenant()` guard (404 on mismatch) to every
+  controller method that receives a tenant-owned model via route binding:
+  `CategoryController::update/destroy`, `ProductController::edit/update/
+  destroy`, and the `$product` parameter in `ProductOptionController`,
+  `ProductVariantController`, `ProductImageController`, and
+  `InventoryController`. A new regression test
+  (`ProductManagementTest::test_an_owner_of_two_tenants_cannot_assign_the_non_active_tenants_category_to_the_other_tenants_product`)
+  proves the exact scenario is now blocked (404, category never written).
+- **No UI to add a variant.** `products/edit.tsx` could edit/delete
+  existing variants and add product options, but never called the
+  already-built-and-tested `ProductVariantController::store()` — there was
+  no way to actually create a sellable variant from an option's values,
+  breaking the module's own core vertical slice (category → product →
+  option → **variant** → image → stock). Fixed by adding an "Add variant"
+  form (price, sale price, weight in grams, SKU suffix, and one
+  option-value picker per option when the product has options), gated
+  behind `can.update` like every other catalog-write control on this page.
+
+**Post-fix totals: 123 backend tests / 426 assertions passing on Postgres
+(122/423 plus the 1 new Fix-2 regression test / 3 new assertions). 3
+frontend (Vitest) tests unchanged. Pint, Larastan (level 7), ESLint,
+Prettier, `tsc --noEmit`, `vite build`, and `vite build --ssr` all still
+pass.**
+
 ### Next phase
 
 Public storefront listing/detail pages: hostname-resolved storefront routes

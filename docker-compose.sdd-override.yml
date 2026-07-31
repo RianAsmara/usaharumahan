@@ -1,0 +1,37 @@
+services:
+  app:
+    container_name: usaharumahan-sdd-app
+  postgres:
+    container_name: usaharumahan-sdd-postgres
+    ports: !override
+      - "5434:5432"
+  redis:
+    container_name: usaharumahan-sdd-redis
+    ports: !override
+      - "6381:6379"
+  nginx:
+    container_name: usaharumahan-sdd-nginx
+    ports: !override
+      - "8181:80"
+  vite:
+    container_name: usaharumahan-sdd-vite
+    ports: !override
+      - "5174:5173"
+  minio:
+    container_name: usaharumahan-sdd-minio
+    ports: !override
+      - "9010:9000"
+      - "9011:9001"
+  mailpit:
+    container_name: usaharumahan-sdd-mailpit
+    ports: !override
+      - "1026:1025"
+      - "8026:8025"
+  horizon:
+    container_name: usaharumahan-sdd-horizon
+  scheduler:
+    container_name: usaharumahan-sdd-scheduler
+  inertia-ssr:
+    container_name: usaharumahan-sdd-ssr
+  minio-init:
+    container_name: usaharumahan-sdd-minio-init
