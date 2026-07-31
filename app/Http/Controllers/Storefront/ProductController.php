@@ -9,12 +9,12 @@ use App\Models\ProductOption;
 use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function show(string $slug, TenantContext $tenantContext): Response
+    public function show(string $slug, TenantContext $tenantContext, Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $tenant = $tenantContext->tenant();
 
@@ -25,7 +25,11 @@ class ProductController extends Controller
             ->with(['images', 'options.values', 'variants.optionValues', 'variants.inventory'])
             ->first();
 
-        abort_if($product === null, 404);
+        if ($product === null) {
+            return Inertia::render('storefront/not-found')
+                ->toResponse($request)
+                ->setStatusCode(404);
+        }
 
         return Inertia::render('storefront/products/show', [
             'store' => $tenant->store->toStorefrontArray(),
@@ -52,6 +56,6 @@ class ProductController extends Controller
                     'stock' => $variant->inventory?->available() ?? 0,
                 ])->all(),
             ],
-        ]);
+        ])->toResponse($request);
     }
 }

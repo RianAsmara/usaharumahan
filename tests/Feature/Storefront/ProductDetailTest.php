@@ -65,6 +65,7 @@ class ProductDetailTest extends TestCase
         $response = $this->get("http://{$hostname}/produk/draf");
 
         $response->assertNotFound();
+        $response->assertInertia(fn ($page) => $page->component('storefront/not-found'));
     }
 
     public function test_it_404s_for_an_archived_product(): void
@@ -81,6 +82,7 @@ class ProductDetailTest extends TestCase
         $response = $this->get("http://{$hostname}/produk/arsip");
 
         $response->assertNotFound();
+        $response->assertInertia(fn ($page) => $page->component('storefront/not-found'));
     }
 
     public function test_it_404s_for_a_not_yet_published_product(): void
@@ -97,6 +99,7 @@ class ProductDetailTest extends TestCase
         $response = $this->get("http://{$hostname}/produk/akan-datang");
 
         $response->assertNotFound();
+        $response->assertInertia(fn ($page) => $page->component('storefront/not-found'));
     }
 
     public function test_it_404s_for_a_product_belonging_to_a_different_tenant(): void
@@ -115,6 +118,7 @@ class ProductDetailTest extends TestCase
         $response = $this->get("http://{$hostname}/produk/punya-toko-lain");
 
         $response->assertNotFound();
+        $response->assertInertia(fn ($page) => $page->component('storefront/not-found'));
     }
 
     public function test_it_404s_for_a_nonexistent_slug(): void
@@ -125,5 +129,6 @@ class ProductDetailTest extends TestCase
         $response = $this->get("http://{$hostname}/produk/tidak-ada");
 
         $response->assertNotFound();
+        $response->assertInertia(fn ($page) => $page->component('storefront/not-found'));
     }
 }
