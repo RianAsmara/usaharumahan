@@ -141,3 +141,26 @@
         @apply bg-background text-foreground;
     }
 }
+
+.storefront {
+    --storefront-paper: oklch(98% 0.015 80);
+    --storefront-paper-muted: oklch(96% 0.02 75);
+    --storefront-ink: oklch(22% 0.02 60);
+    --storefront-border: oklch(90% 0.02 70);
+    --storefront-status-open: oklch(55% 0.12 150);
+    --storefront-status-closed: oklch(60% 0.02 70);
+    --storefront-status-warning: oklch(58% 0.15 35);
+
+    font-family:
+        'Figtree', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+.storefront .font-serif {
+    font-family: 'Fraunces', ui-serif, Georgia, Cambria, serif;
+}
+
+.storefront-banner-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23000' fill-opacity='0.05'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+}
