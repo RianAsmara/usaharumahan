@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ProductStatus;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -74,5 +75,34 @@ class Product extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    public function scopePublished(Builder $query): void
+    {
+        $query->where('status', ProductStatus::Active)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+    }
+
+    /**
+     * @return array{amount: int, isFrom: bool}
+     */
+    public function displayPrice(): array
+    {
+        $effectivePrices = $this->variants->map(
+            fn (ProductVariant $variant): int => $variant->sale_price ?? $variant->price,
+        );
+
+        return [
+            'amount' => $effectivePrices->min(),
+            'isFrom' => $effectivePrices->unique()->count() > 1,
+        ];
+    }
+
+    public function isInStock(): bool
+    {
+        return $this->variants->contains(
+            fn (ProductVariant $variant): bool => $variant->inventory !== null && $variant->inventory->available() > 0,
+        );
     }
 }
