@@ -32,6 +32,7 @@ class HomeController extends Controller
                 'images' => fn ($query) => $query->limit(1),
                 'variants.inventory',
             ])
+            ->latest()
             ->get()
             ->map(fn (Product $product): array => [
                 'id' => $product->id,

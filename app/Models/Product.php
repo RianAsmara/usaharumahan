@@ -77,6 +77,9 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
+    /**
+     * @param  Builder<Product>  $query
+     */
     public function scopePublished(Builder $query): void
     {
         $query->where('status', ProductStatus::Active)

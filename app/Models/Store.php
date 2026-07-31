@@ -43,6 +43,13 @@ class Store extends Model
     /** @use HasFactory<StoreFactory> */
     use HasFactory;
 
+    /**
+     * The logo and banner are stored on the `s3` disk (MinIO locally) —
+     * never the local `public` disk — so the frontend must never construct
+     * storage paths itself; it always reads these computed URLs instead.
+     *
+     * @var list<string>
+     */
     protected $appends = ['logo_url', 'banner_url'];
 
     protected function casts(): array

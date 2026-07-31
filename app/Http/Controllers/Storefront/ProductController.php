@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\ProductImage;
+use App\Models\ProductOption;
+use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
 use App\Support\Tenancy\TenantContext;
 use Inertia\Inertia;
@@ -29,14 +32,14 @@ class ProductController extends Controller
             'product' => [
                 'name' => $product->name,
                 'description' => $product->description,
-                'images' => $product->images->map(fn ($image): array => [
+                'images' => $product->images->map(fn (ProductImage $image): array => [
                     'id' => $image->id,
                     'url' => $image->url,
                 ])->all(),
-                'options' => $product->options->map(fn ($option): array => [
+                'options' => $product->options->map(fn (ProductOption $option): array => [
                     'id' => $option->id,
                     'name' => $option->name,
-                    'values' => $option->values->map(fn ($value): array => [
+                    'values' => $option->values->map(fn (ProductOptionValue $value): array => [
                         'id' => $value->id,
                         'value' => $value->value,
                     ])->all(),

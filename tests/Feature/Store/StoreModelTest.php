@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Store;
 
-use App\Models\Store;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\CreatesTenants;
